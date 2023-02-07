@@ -70,11 +70,10 @@ df %>%
 
 df$wp = df$wins / (df$wins + df$losses)
 
-# wp = rs^k / (rs^k + ra^k)
-# wp = (rs / (rs + ra))^k
-# log(wp) = k*log(rs / (rs+ra))
+# correct algebra 
+# https://mail.google.com/mail/u/0/?tab=rm&ogbl#search/conor+mcquiston/FMfcgzGrcFpNmkDnnFgHnnSLlhdHtmQV
 
-mod2 = df %>% lm(log(wp) ~ log(rs/(rs+ra)), .)
+mod2 = df %>% lm(log(wp) ~ log(rs/(rs+ra)), .) # this is incorrect algebra but better fit than the correct algebra
 summary(mod2)
 
 df$x_winper = exp(predict(mod2, df, type = "response"))
