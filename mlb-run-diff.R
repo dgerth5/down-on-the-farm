@@ -65,3 +65,15 @@ df %>%
       hjust = 0.5
     )
   ) 
+
+# extracting pythag
+
+df$wp = df$wins / (df$wins + df$losses)
+
+# wp = rs^k / (rs^k + ra^k)
+# wp = (rs / (rs + ra))^k
+# log(wp) = k*log(rs / (rs+ra))
+
+mod2 = lm(log(wp) ~ log(rs/(rs+ra)), data = df)
+summary(mod2)
+
