@@ -28,6 +28,9 @@ ml_pbp <- ml_pbp %>% as.data.frame()
 getwd()
 write.csv(ml_pbp, "triple-a-pbp.csv") # might want to find something faster than this
 
+## next time import csv, prob take a min or two
+
+
 hd <- ml_pbp[1:3,] # just to get an idea of the column names
 
 # counting up the na's in the pitch types
