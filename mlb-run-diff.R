@@ -74,6 +74,91 @@ df$wp = df$wins / (df$wins + df$losses)
 # wp = (rs / (rs + ra))^k
 # log(wp) = k*log(rs / (rs+ra))
 
-mod2 = lm(log(wp) ~ log(rs/(rs+ra)), data = df)
+mod2 = df %>% lm(log(wp) ~ log(rs/(rs+ra)), .)
 summary(mod2)
 
+df$x_winper = exp(predict(mod2, df, type = "response"))
+df$x_wins = df$x_winper*162
+
+df_fit = df %>% 
+  mutate(win_d = round(wins - x_wins, 0)) %>%
+  as_tibble
+
+team_colors_long = c(
+  'Texas Rangers' = '#002D72',
+  'Detroit Tigers' = '#0C2340',
+  'Los Angeles Dodgers' = '#002F6C',
+  'Los Angeles Angels' = '#BA0021',
+  'Minnesota Twins' ='#0C2340',
+  'New York Mets' = '#002D72',
+  'Arizona Diamondbacks' = '#A71930',
+  'St. Louis Cardinals' = '#BA0C2F',
+  'Cleveland Guardians' = '#D50032',
+  'Baltimore Orioles' = '#FC4C02',
+  'Toronto Blue Jays' = '#134A8E',
+  'Houston Astros' = '#EB6E1F',
+  'New York Yankees' = '#0C2340',
+  'Atlanta Braves' = '#BA0C2F',
+  'Colorado Rockies' = '#330072',
+  'Seattle Mariners' = '#00685E',
+  'Milwaukee Brewers' = '#13294B',
+  'Kansas City Royals' = '#1A4784',
+  'Pittsburgh Pirates' = '#FFC72C',
+  'Washington Nationals' = '#BA122B',
+  'Chicago Cubs' = '#002F6C',
+  'San Francisco Giants' = '#FA4616',
+  'San Diego Padres' = '#041E42',
+  'Boston Red Sox' = '#C8102E',
+  'Miami Marlins' = '#ED6F2E',
+  'Cincinnati Reds' = '#D50032',
+  'Oakland Athletics' = '#034638',
+  'Tampa Bay Rays' = '#8FBCE6',
+  'Philadelphia Phillies' = '#BA0C2F',
+  'Chicago White Sox' = '#27251F'
+)
+
+df_fit %>%
+  mutate(team_abbr = paste0(team_abbr, " ", win_d)) %>%
+  ggplot(., aes(x = wins, y =  x_wins, 
+                label = team_abbr, fill = team_name)) +
+  scale_x_continuous(breaks = seq(50, 120, 5), limits=c(50, 120)) +
+  scale_y_continuous(breaks = seq(50, 120, 5), limits=c(50, 120)) +
+  geom_point(size = 3) + 
+  scale_fill_manual(values=team_colors_long) +
+  geom_point(shape = 21, size = 5, colour = "black") +
+  geom_text_repel(
+    min.segment.length = .1, 
+    nudge_x = .15, 
+    box.padding = 0.9, 
+    max.overlaps = Inf, 
+    alpha = .9
+  ) +
+  theme_scott() +
+  theme(
+    legend.position = 'none', 
+    plot.title.position = 'plot', 
+    plot.title = element_text(
+      face = 'bold', 
+      size = 18, 
+      color = "#CB4C4E", 
+      hjust = 0.5
+    ), 
+    plot.subtitle = element_text(
+      size = 12, 
+      face = 'bold', 
+      hjust = 0.5
+    )
+  ) +
+  labs(
+    title="2022 MLB Wins vs. Expected Wins",
+    subtitle = "Expected Wins Based on Run Differential",
+    x ="Actual Wins", 
+    y = "Expected Wins") +
+  geom_smooth(
+    method="lm", 
+    se=FALSE, 
+    formula=y~x, 
+    colour="red", 
+    linetype = "dashed", 
+    fill = NA
+  )
