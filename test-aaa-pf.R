@@ -35,9 +35,6 @@ single_stad_re <- single_re %>%
   filter(group_var == "home_team")
 summary(single_mod)
 
-
-
-
 logit2prob <- function(logit){
   odds <- exp(logit)
   prob <- odds / (1 + odds)
@@ -61,3 +58,15 @@ singles$per = ((singles$singles - mean(singles$singles)) / mean(singles$singles)
 double_re <- extract_random_effects(double_mod)
 triple_re <- extract_random_effects(triple_mod)
 homer_re <- extract_random_effects(homer_mod)
+
+
+pred_df <- just_hit_sits 
+
+pred_df$pred_all <- predict(single_mod, pred_df, type = "response")
+pred_df$no_pk <- predict(single_mod2, pred_df, type = "response")
+
+pred_df$spread <- pred_df$pred_all - pred_df$no_pk
+
+by_pk <- pred_df %>%
+  group_by(home_team) %>%
+  summarise(avg_effect = mean(spread))
