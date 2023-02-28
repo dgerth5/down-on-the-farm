@@ -90,15 +90,16 @@ la <- c(rep(mean(df_tot$tot_k) / mean(df_tot$tot_pa), length(df_final$game_date)
 
 dff_final <- rbind(df_final, df_final_21)
 
-fn <- function(pad, roll_k, roll_pa, k_per, la){
+fn <- function(pad, roll_stat, roll_pa, stat_per, la){
   
-  pad = (roll_k + pad*la) / (roll_pa + pad)
+  pad = (roll_stat + pad*la) / (roll_pa + pad)
   
-  resid = pad - k_per
+  resid = pad - stat_per
   
   return(sqrt(sum(resid^2)))
   
 }
 
-optimize(fn, c(0,100), roll_k = dff_final$roll_k, roll_pa = dff_final$roll_pa, k_per = dff_final$tot_k / dff_final$tot_pa, la = la)
+k_pad <- optimize(fn, c(0,100), roll_stat = dff_final$roll_k, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_k / dff_final$tot_pa, la = la)$minimum
+bb_pad <- optimize(fn, c(0,100), roll_stat = dff_final$roll_walk, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_walk / dff_final$tot_pa, la = la)$minimum
 
