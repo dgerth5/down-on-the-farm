@@ -39,16 +39,18 @@ df_tot <- df2 %>%
   group_by(adj_name) %>%
   summarise(tot_walk = sum(walk),
             tot_k = sum(strikeout),
-            tot_pa = n())
+            tot_pa = n(),
+            year = 2022)
 
 df_final <- left_join(dfroll, df_tot, by = "adj_name")
 
 # write_csv(df_final, "test-doubleaa-pad.csv")
 
-la_k = 0.2365
+la <- rep(.2365, length(df_final$game_date))
 
-fn <- function(pad, roll_k, roll_pa, k_per){
-  pad = (roll_k + pad*0.2365) / (roll_pa + pad)
+fn <- function(pad, roll_k, roll_pa, k_per, la){
+  
+  pad = (roll_k + pad*la) / (roll_pa + pad)
   
   resid = pad - k_per
   
@@ -56,5 +58,5 @@ fn <- function(pad, roll_k, roll_pa, k_per){
   
 }
 
-optimize(fn, c(0,100), roll_k = df_final$roll_k, roll_pa = df_final$roll_pa, k_per = df_final$tot_k / df_final$tot_pa)
+optimize(fn, c(0,100), roll_k = df_final$roll_k, roll_pa = df_final$roll_pa, k_per = df_final$tot_k / df_final$tot_pa, la = la)
 
