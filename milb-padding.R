@@ -1,11 +1,19 @@
 library(readr)
 library(tidyverse)
 
-double_a_pbp2022 <- read_csv("double_a_pbp2022.csv")
+milb_pbp_2022 <- read_csv("milb_pbp_2022.csv")
+
+double_a_pbp2022 <- milb_pbp_2022 %>%
+  filter(home_level_name == "Single-A") %>%
+  filter(isPitch == TRUE)
 
 filt <- double_a_pbp2022 %>%
-  filter(isPitch == TRUE) %>%
-  filter(last.pitch.of.ab == TRUE) 
+  group_by(game_pk) %>%
+  arrange(atBatIndex, .by_group = TRUE) %>%
+  mutate(ld = lead(matchup.batter.id, 1),
+         last_pitch_ab = if_else(is.na(ld) == TRUE, 1, 
+                                 if_else(matchup.batter.id != ld, 1, 0))) %>%
+  filter(last_pitch_ab == 1)
 
 events <- c("single","field_out","strikeout","double","hit_by_pitch","home_run","double_play","walk",
             "triple","force_out","sac_fly","field_error","grounded_into_double_play","fielders_choice_out","other_out",
@@ -38,16 +46,23 @@ df_tot <- df2 %>%
   group_by(adj_name) %>%
   summarise(tot_walk = sum(walk),
             tot_k = sum(strikeout),
-            tot_pa = n(),
-            year = 2022)
+            tot_pa = n())
 
 df_final <- left_join(dfroll, df_tot, by = "adj_name")
 
-double_a_pbp2021 <- read_csv("double_a_pbp2021.csv")
+milb_pbp_2021 <- read_csv("milb_pbp_2021.csv")
+
+double_a_pbp2021 <- milb_pbp_2021 %>%
+  filter(home_level_name == "Single-A") %>%
+  filter(isPitch == TRUE)
 
 filt21 <- double_a_pbp2021 %>%
-  filter(isPitch == TRUE) %>%
-  filter(last.pitch.of.ab == TRUE) 
+  group_by(game_pk) %>%
+  arrange(atBatIndex, .by_group = TRUE) %>%
+  mutate(ld = lead(matchup.batter.id, 1),
+         last_pitch_ab = if_else(is.na(ld) == TRUE, 1, 
+                                 if_else(matchup.batter.id != ld, 1, 0))) %>%
+  filter(last_pitch_ab == 1)
 
 events <- c("single","field_out","strikeout","double","hit_by_pitch","home_run","double_play","walk",
             "triple","force_out","sac_fly","field_error","grounded_into_double_play","fielders_choice_out","other_out",
@@ -84,22 +99,26 @@ df_tot_21 <- df2_21 %>%
 
 df_final_21 <- left_join(dfroll_21, df_tot_21, by = "adj_name")
 
-la <- c(rep(mean(df_tot$tot_k) / mean(df_tot$tot_pa), length(df_final$game_date)),
-        rep(mean(df_tot_21$tot_k) / mean(df_tot_21$tot_pa), length(df_final_21$game_date)))
+la_bb <- c(rep(mean(df_tot$tot_walk) / mean(df_tot$tot_pa), length(df_final$game_date)),
+          rep(mean(df_tot_21$tot_walk) / mean(df_tot_21$tot_pa), length(df_final_21$game_date)))
+
+la_k <- c(rep(mean(df_tot$tot_k) / mean(df_tot$tot_pa), length(df_final$game_date)),
+          rep(mean(df_tot_21$tot_k) / mean(df_tot_21$tot_pa), length(df_final_21$game_date)))
         
 
 dff_final <- rbind(df_final, df_final_21)
 
+#write_csv(dff_final, file = "padding_test2.csv")
+
+
 fn <- function(pad, roll_stat, roll_pa, stat_per, la){
   
-  pad = (roll_stat + pad*la) / (roll_pa + pad)
+  pad2 = (roll_stat + pad*la) / (roll_pa + pad)
   
-  resid = pad - stat_per
-  
-  return(sqrt(sum(resid^2)))
-  
+  rmse = MLmetrics::RMSE(pad2, stat_per)
+
 }
 
-k_pad <- optimize(fn, c(0,100), roll_stat = dff_final$roll_k, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_k / dff_final$tot_pa, la = la)$minimum
-bb_pad <- optimize(fn, c(0,100), roll_stat = dff_final$roll_walk, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_walk / dff_final$tot_pa, la = la)$minimum
+k_pad <- optimize(fn, c(0,100), roll_stat = dff_final$roll_k, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_k / dff_final$tot_pa, la = la_k)$minimum
+bb_pad <- optimize(fn, c(0,100), roll_stat = dff_final$roll_walk, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_walk / dff_final$tot_pa, la = la_bb)$minimum
 
