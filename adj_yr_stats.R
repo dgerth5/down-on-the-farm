@@ -106,11 +106,57 @@ fnl_milb_pf <- cbind(milbpf_wlgs_2022, empy_df_single, empy_df_double, empy_df_t
 
 adding_pf <- left_join(smry, fnl_milb_pf, by = "team") %>%
   mutate(adj_single = singles / (.5*(single_pf/100) + .5*(single_pf_wo_team/100)),
-         single_dff = singles - adj_single,
+         single_dff = adj_single - singles,
          adj_double = doubles / (.5*(double_pf/100) + .5*(double_pf_wo_team/100)),
-         double_dff = doubles - adj_double,
+         double_dff = adj_double - doubles,
          adj_triple = triples / (.5*(triple_pf/100) + .5*(triple_pf_wo_team/100)),
-         triple_dff = triples - adj_triple,
+         triple_dff = adj_triple - triples,
          adj_homer = homers / (.5*(home_run_pf/100) + .5*(hr_pf_wo_team/100)),
-         homer_dff = homers - adj_homer)
+         homer_dff = adj_homer - homers)
 
+combin <- adding_pf %>%
+  group_by(batterid_name) %>%
+  summarise(tot_pa = sum(pa),
+            tot_single = sum(singles),
+            tot_doubles = sum(doubles),
+            tot_triples = sum(triples),
+            tot_homers = sum(homers),
+            tot_adj_singles = sum(adj_single),
+            tot_adj_doubles = sum(adj_double),
+            tot_adj_triples = sum(adj_triple),
+            tot_adj_homer = sum(adj_homer)) %>%
+  mutate(tot_single_diff = tot_adj_singles - tot_single,
+         tot_double_diff = tot_adj_doubles - tot_doubles,
+         tot_triple_diff = tot_adj_triples - tot_triples,
+         tot_homer_diff = tot_adj_homer - tot_homers)
+
+library(gt)
+
+top_hr <- combin %>%
+  arrange(-tot_homer_diff) %>%
+  select(batterid_name, tot_homers, tot_adj_homer, tot_homer_diff) %>%
+  slice(1:5) 
+
+bot_hr <- combin %>%
+  arrange(tot_homer_diff) %>%
+  select(batterid_name, tot_homers, tot_adj_homer, tot_homer_diff) %>%
+  slice(1:5) 
+
+gt(top_hr) %>%
+  tab_header(title = md("**Top 5 Home Run Parks**"),
+             subtitle = md("Season: 2022"))
+
+combin$name = ifelse(combin$batterid_name %in% c(top_hr$batterid_name,bot_hr$batterid_name), combin$batterid_name, "")
+
+
+library(ggplot2)
+library(ggrepel)
+
+ggplot(combin, aes(x = tot_homers, y = tot_adj_homer, label = name)) +
+  geom_point() +
+  geom_text_repel(min.segment.length = 0, max.overlaps = 100) +
+  geom_abline(slope = 1, intercept = 0, color = "red") +
+  labs(x = "Home Runs", y = "Park Factor Adjusted Home Runs",
+       title = "Home Runs v Adjusted Home Runs",
+       subtitle = "Season: 2022")
+  
