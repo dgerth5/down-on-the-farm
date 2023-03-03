@@ -148,14 +148,13 @@ gt(top_hr) %>%
 
 combin$name = ifelse(combin$batterid_name %in% c(top_hr$batterid_name,bot_hr$batterid_name), combin$batterid_name, "")
 
-
 library(ggplot2)
 library(ggrepel)
 
 ggplot(combin, aes(x = tot_homers, y = tot_adj_homer, label = name)) +
   geom_point() +
   geom_text_repel(min.segment.length = 0, max.overlaps = 100) +
-  geom_abline(slope = 1, intercept = 0, color = "red") +
+  geom_abline(slope = 1, intercept = 0, color = "blue") +
   labs(x = "Home Runs", y = "Park Factor Adjusted Home Runs",
        title = "Home Runs v Adjusted Home Runs",
        subtitle = "Season: 2022")
