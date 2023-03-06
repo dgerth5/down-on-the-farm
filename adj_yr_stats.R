@@ -117,45 +117,76 @@ adding_pf <- left_join(smry, fnl_milb_pf, by = "team") %>%
 combin <- adding_pf %>%
   group_by(batterid_name) %>%
   summarise(tot_pa = sum(pa),
-            tot_single = sum(singles),
+            tot_singles = sum(singles),
             tot_doubles = sum(doubles),
             tot_triples = sum(triples),
             tot_homers = sum(homers),
             tot_adj_singles = sum(adj_single),
             tot_adj_doubles = sum(adj_double),
             tot_adj_triples = sum(adj_triple),
-            tot_adj_homer = sum(adj_homer)) %>%
-  mutate(tot_single_diff = tot_adj_singles - tot_single,
+            tot_adj_homers = sum(adj_homer)) %>%
+  mutate(tot_single_diff = tot_adj_singles - tot_singles,
          tot_double_diff = tot_adj_doubles - tot_doubles,
          tot_triple_diff = tot_adj_triples - tot_triples,
-         tot_homer_diff = tot_adj_homer - tot_homers)
+         tot_homer_diff = tot_adj_homers - tot_homers,
+         single_per = tot_singles / tot_pa,
+         adj_single_per = tot_adj_singles / tot_pa,
+         single_per_diff = adj_single_per - single_per,
+         double_per = tot_doubles / tot_pa,
+         adj_double_per = tot_adj_doubles / tot_pa,
+         double_per_diff = adj_double_per - double_per,
+         triple_per = tot_triples / tot_pa,
+         adj_triple_per = tot_adj_triples / tot_pa,
+         triple_per_diff = adj_triple_per - triple_per,
+         homer_per = tot_homers / tot_pa*100,
+         adj_homer_per = tot_adj_homers / tot_pa*100,
+         homer_per_diff = adj_homer_per - homer_per,
+         Name = substr(batterid_name,1, nchar(batterid_name)-6)) %>%
+  filter(tot_pa > 50)
 
 library(gt)
+library(stringr)
 
 top_hr <- combin %>%
-  arrange(-tot_homer_diff) %>%
-  select(batterid_name, tot_homers, tot_adj_homer, tot_homer_diff) %>%
+  arrange(-homer_per_diff) %>%
+  mutate(Name = substr(batterid_name,1, nchar(batterid_name)-6)) %>%
+  select(Name, homer_per, adj_homer_per, homer_per_diff) %>%
+  rename(`Home_Run%` = homer_per,
+         `Adj_Home_Run%` = adj_homer_per,
+         `Diff%` = homer_per_diff) %>%
   slice(1:5) 
 
 bot_hr <- combin %>%
-  arrange(tot_homer_diff) %>%
-  select(batterid_name, tot_homers, tot_adj_homer, tot_homer_diff) %>%
+  arrange(homer_per_diff) %>%
+  mutate(Name = substr(batterid_name,1, nchar(batterid_name)-6)) %>%
+  select(Name, homer_per, adj_homer_per, homer_per_diff) %>%
+  rename(`Home_Run%` = homer_per,
+         `Adj_Home_Run%` = adj_homer_per,
+         `Diff%` = homer_per_diff) %>%
   slice(1:5) 
 
-gt(top_hr) %>%
-  tab_header(title = md("**Top 5 Home Run Parks**"),
-             subtitle = md("Season: 2022"))
+gt(bot_hr) %>%
+  tab_header(title = md("**Players Who Benefited The Most**"),
+             subtitle = md("Season: 2022, Min 50 PA")) %>%
+  fmt_number(columns = c("Home_Run%","Adj_Home_Run%","Diff%"), decimals = 2)
 
-combin$name = ifelse(combin$batterid_name %in% c(top_hr$batterid_name,bot_hr$batterid_name), combin$batterid_name, "")
+combin$name = ifelse(combin$Name %in% c(top_hr$Name,bot_hr$Name), combin$Name, "")
 
 library(ggplot2)
 library(ggrepel)
 
-ggplot(combin, aes(x = tot_homers, y = tot_adj_homer, label = name)) +
+ggplot(combin, aes(x = homer_per, y = adj_homer_per, label = name)) +
   geom_point() +
-  geom_text_repel(min.segment.length = 0, max.overlaps = 100) +
-  geom_abline(slope = 1, intercept = 0, color = "blue") +
-  labs(x = "Home Runs", y = "Park Factor Adjusted Home Runs",
-       title = "Home Runs v Adjusted Home Runs",
-       subtitle = "Season: 2022")
+  geom_text_repel(min.segment.length = 0, max.overlaps = 10000) +
+  geom_abline(slope = 1, intercept = 0, color = "red") +
+  labs(x = "Home Run %", y = "Park Factor Adjusted Home Run %",
+       title = "Home Run % v Adjusted Home Run %",
+       subtitle = "Season: 2022, Min 50 PA")
+
+df <- data.frame(Hit_Type = c("Single","Double","Triple","Home Run"),
+                 Spread = c(11.9,19.7,49.0,63.1)) %>%
+  gt() %>%
+  tab_header(title = md("**Difference in Park Factor Between Highest and Lowest**"),
+             subtitle = md("Season: 2022"))
   
+df
