@@ -16,7 +16,9 @@ smry <- milb_pbp_2022 %>%
          single = if_else(result.eventType == "single", 1, 0),
          double = if_else(result.eventType == "double", 1, 0),
          triple = if_else(result.eventType == "triple", 1, 0),
-         home_runs = if_else(result.eventType == "home_run", 1, 0)) %>%
+         home_runs = if_else(result.eventType == "home_run", 1, 0),
+         sac = if_else(result.eventType == "sac_fly" | result.eventType == "sac_bunt", 1, 0),
+         hpb = if_else(result.eventType == "Hit By Pitch", 1, 0)) %>%
   filter(last_pitch_ab == 1) %>% 
   group_by(batterid_name, batting_team) %>%
   summarise(pa = n(),
@@ -25,7 +27,9 @@ smry <- milb_pbp_2022 %>%
             triples = sum(triple),
             homers = sum(home_runs),
             strikeouts = sum(strikeout),
-            walks = sum(walk)) %>%
+            walks = sum(walk),
+            sacs = sum(sac),
+            hbps = sum(hpb)) %>%
   rename(team = batting_team)
 
 library(readxl)
@@ -60,6 +64,8 @@ get_pf_wo_tm <- function(df, tm, type){
   lst <- data.frame(pf_wo_team = avg_pf, 
                     pm_wo_team = avg_pm)
   
+ # lst <- lst[!duplicated(lst)]
+  
   return(lst)
   
 }
@@ -69,9 +75,7 @@ empy_df_double <- data.frame()
 empy_df_triple <- data.frame()
 empy_df_home_run <- data.frame()
 
-
-tms <- milbpf_wlgs_2022$team[41]
-
+tms <- milbpf_wlgs_2022$team
 
 for (i in 1:length(tms)){
   
@@ -81,19 +85,19 @@ for (i in 1:length(tms)){
   
   empy_df_single <- rbind(empy_df_single, tm)
   
-  tm2 <- get_pf_wo_tm(milbpf_wlgs_2022, tms[i], "single") %>% 
+  tm2 <- get_pf_wo_tm(milbpf_wlgs_2022, tms[i], "double") %>% 
     rename(double_pf_wo_team = pf_wo_team,
            double_pm_wo_team = pm_wo_team)
   
   empy_df_double <- rbind(empy_df_double, tm2)
   
-  tm3 <- get_pf_wo_tm(milbpf_wlgs_2022, tms[i], "single") %>% 
+  tm3 <- get_pf_wo_tm(milbpf_wlgs_2022, tms[i], "triple") %>% 
     rename(triple_pf_wo_team = pf_wo_team,
            triple_pm_wo_team = pm_wo_team)
   
   empy_df_triple <- rbind(empy_df_triple, tm3)
   
-  tm4 <- get_pf_wo_tm(milbpf_wlgs_2022, tms[i], "single") %>% 
+  tm4 <- get_pf_wo_tm(milbpf_wlgs_2022, tms[i], "homerun") %>% 
     rename(hr_pf_wo_team = pf_wo_team,
            hr_pm_wo_team = pm_wo_team)
   
@@ -124,7 +128,11 @@ combin <- adding_pf %>%
             tot_adj_singles = sum(adj_single),
             tot_adj_doubles = sum(adj_double),
             tot_adj_triples = sum(adj_triple),
-            tot_adj_homers = sum(adj_homer)) %>%
+            tot_adj_homers = sum(adj_homer),
+            tot_walks = sum(walks),
+            tot_strikeouts = sum(strikeouts),
+            tot_sacs = sum(sacs),
+            tot_hbp = sum(hbps)) %>%
   mutate(tot_single_diff = tot_adj_singles - tot_singles,
          tot_double_diff = tot_adj_doubles - tot_doubles,
          tot_triple_diff = tot_adj_triples - tot_triples,
@@ -141,8 +149,21 @@ combin <- adding_pf %>%
          homer_per = tot_homers / tot_pa*100,
          adj_homer_per = tot_adj_homers / tot_pa*100,
          homer_per_diff = adj_homer_per - homer_per,
-         Name = substr(batterid_name,1, nchar(batterid_name)-6)) %>%
-  filter(tot_pa > 50)
+         Name = substr(batterid_name,1, nchar(batterid_name)-6),
+         adj_batting_avg = (tot_adj_singles + tot_adj_doubles + tot_adj_triples + tot_adj_homers) /
+           (tot_pa - tot_walks - tot_sacs - tot_hbp),
+         adj_obp = (tot_adj_singles + tot_adj_doubles + tot_adj_triples + tot_adj_homers + tot_walks + tot_hbp) /
+           (tot_pa - tot_sacs),
+         adj_slg = (tot_adj_singles + tot_adj_doubles*2 + tot_adj_triples*3 + tot_adj_homers*4) /
+           (tot_pa - tot_walks - tot_sacs - tot_hbp),
+         batting_avg = (tot_singles + tot_doubles + tot_triples + tot_homers) /
+           (tot_pa - tot_walks - tot_sacs - tot_hbp),
+         obp = (tot_singles + tot_doubles + tot_triples + tot_homers + tot_walks + tot_hbp) /
+           (tot_pa - tot_sacs),
+         slg = (tot_singles + tot_doubles*2 + tot_triples*3 + tot_homers*4) /
+           (tot_pa - tot_walks - tot_sacs - tot_hbp)
+         ) %>%
+  filter(tot_pa >= 200)
 
 library(gt)
 library(stringr)
@@ -165,10 +186,12 @@ bot_hr <- combin %>%
          `Diff%` = homer_per_diff) %>%
   slice(1:5) 
 
-gt(bot_hr) %>%
-  tab_header(title = md("**Players Who Benefited The Most**"),
-             subtitle = md("Season: 2022, Min 50 PA")) %>%
-  fmt_number(columns = c("Home_Run%","Adj_Home_Run%","Diff%"), decimals = 2)
+gt(top_hr) %>%
+  tab_header(title = md("**Players Who Were Hurt The Most**"),
+             subtitle = md("Season: 2022, Min 200 PA")) %>%
+  fmt_number(columns = c("Home_Run%","Adj_Home_Run%","Diff%"), decimals = 1) %>%
+  cols_label(`Home_Run%` = "Home Run %",
+             `Adj_Home_Run%` = "Adj. Home Run%")
 
 combin$name = ifelse(combin$Name %in% c(top_hr$Name,bot_hr$Name), combin$Name, "")
 
@@ -181,12 +204,98 @@ ggplot(combin, aes(x = homer_per, y = adj_homer_per, label = name)) +
   geom_abline(slope = 1, intercept = 0, color = "red") +
   labs(x = "Home Run %", y = "Park Factor Adjusted Home Run %",
        title = "Home Run % v Adjusted Home Run %",
-       subtitle = "Season: 2022, Min 50 PA")
+       subtitle = "Season: 2022, Min 200 PA")
 
 df <- data.frame(Hit_Type = c("Single","Double","Triple","Home Run"),
                  Spread = c(11.9,19.7,49.0,63.1)) %>%
   gt() %>%
   tab_header(title = md("**Difference in Park Factor Between Highest and Lowest**"),
              subtitle = md("Season: 2022"))
-  
-df
+
+top_name <- c("Gunnar Henderson",
+         "Corbin Carroll",
+         "Elly De La Cruz",
+         "Jackson Chourio",
+         "Jordan Walker",
+         "Francisco Álvarez",
+         "Pete Crow-Armstrong",
+         "Jordan Lawlar",
+         "Marcelo Mayer",
+         "Diego Cartaya",
+         "Masyn Winn")
+
+library(gtExtras)
+
+combin %>%
+  filter(Name %in% top_name) %>%
+  mutate(ops = obp + slg,
+         pfops = adj_obp + adj_slg,
+         ops_diff = pfops - ops) %>%
+  select(Name, batting_avg, obp, slg, adj_batting_avg, adj_obp, adj_slg, ops, pfops, ops_diff) %>%
+  gt() %>%
+  tab_header(title = md("**Raw Slash Line vs. Park Factor Adj. Slash Line**"),
+           subtitle = md("Selected Top Prospects")) %>%
+  fmt_number(columns = c("batting_avg", "adj_batting_avg", "obp", "adj_obp", "slg", "adj_slg", "ops", "pfops", "ops_diff"), decimals = 3) %>%
+  gt_add_divider(columns = "slg", style = "solid") %>%
+  gt_add_divider(columns = "adj_slg", style = "solid") %>%
+  gt_color_rows(ops_diff, palette = c("blue", "white", "red"), domain = c(-.200, .200), na.color = "#FFFFFF") %>%
+  cols_label(batting_avg = "BA",
+             adj_batting_avg = "pfBA",
+             obp = "OBP",
+             adj_obp = "pfOBP",
+             slg = "SLG",
+             adj_slg = "pfSLG",
+             ops = "OPS",
+             pfops = "pfOPS",
+             ops_diff = "OPS Diff")
+
+leader <- adding_pf %>%
+  group_by(batterid_name) %>%
+  summarise(tot_pa = sum(pa),
+            tot_singles = sum(singles),
+            tot_doubles = sum(doubles),
+            tot_triples = sum(triples),
+            tot_homers = sum(homers),
+            tot_adj_singles = sum(adj_single),
+            tot_adj_doubles = sum(adj_double),
+            tot_adj_triples = sum(adj_triple),
+            tot_adj_homers = sum(adj_homer),
+            tot_walks = sum(walks),
+            tot_strikeouts = sum(strikeouts),
+            tot_sacs = sum(sacs),
+            tot_hbp = sum(hbps)) %>%
+  mutate(tot_single_diff = tot_adj_singles - tot_singles,
+         tot_double_diff = tot_adj_doubles - tot_doubles,
+         tot_triple_diff = tot_adj_triples - tot_triples,
+         tot_homer_diff = tot_adj_homers - tot_homers,
+         single_per = tot_singles / tot_pa,
+         adj_single_per = tot_adj_singles / tot_pa,
+         single_per_diff = adj_single_per - single_per,
+         double_per = tot_doubles / tot_pa,
+         adj_double_per = tot_adj_doubles / tot_pa,
+         double_per_diff = adj_double_per - double_per,
+         triple_per = tot_triples / tot_pa,
+         adj_triple_per = tot_adj_triples / tot_pa,
+         triple_per_diff = adj_triple_per - triple_per,
+         homer_per = tot_homers / tot_pa*100,
+         adj_homer_per = tot_adj_homers / tot_pa*100,
+         homer_per_diff = adj_homer_per - homer_per,
+         Name = substr(batterid_name,1, nchar(batterid_name)-6),
+         adj_batting_avg = (tot_adj_singles + tot_adj_doubles + tot_adj_triples + tot_adj_homers) /
+           (tot_pa - tot_walks - tot_sacs - tot_hbp),
+         adj_obp = (tot_adj_singles + tot_adj_doubles + tot_adj_triples + tot_adj_homers + tot_walks + tot_hbp) /
+           (tot_pa - tot_sacs),
+         adj_slg = (tot_adj_singles + tot_adj_doubles*2 + tot_adj_triples*3 + tot_adj_homers*4) /
+           (tot_pa - tot_walks - tot_sacs - tot_hbp),
+         batting_avg = (tot_singles + tot_doubles + tot_triples + tot_homers) /
+           (tot_pa - tot_walks - tot_sacs - tot_hbp),
+         obp = (tot_singles + tot_doubles + tot_triples + tot_homers + tot_walks + tot_hbp) /
+           (tot_pa - tot_sacs),
+         slg = (tot_singles + tot_doubles*2 + tot_triples*3 + tot_homers*4) /
+           (tot_pa - tot_walks - tot_sacs - tot_hbp),
+         diff_ops = adj_slg + adj_obp - slg - obp) %>%
+  select(Name, tot_pa, batting_avg, obp, slg, adj_batting_avg, adj_obp, adj_slg, diff_ops)
+
+leader[,-c(1,2)] <- round(leader[,-c(1,2)],3)
+
+write_csv(leader, "adj_leaderboard22.csv")
