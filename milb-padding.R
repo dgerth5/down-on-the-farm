@@ -64,7 +64,16 @@ df_tot <- df2 %>%
             tot_hr = sum(home_runs),
             tot_pa = n())
 
-df_final <- left_join(dfroll, df_tot, by = "adj_name") %>% filter(tot_pa > 200)
+df_final <- left_join(dfroll, df_tot, by = "adj_name") %>% 
+  mutate(ry_walk = tot_walk - roll_walk,
+         ry_k = tot_k - roll_k,
+         ry_sing = tot_sing - roll_sing,
+         ry_dbl = tot_dbl - roll_dbl,
+         ry_tri = tot_tri - roll_tri,
+         ry_hr = tot_hr - roll_hr,
+         ry_pa = tot_pa - roll_pa) %>%
+  #filter(tot_pa > 200) %>%
+  filter(ry_pa != 0)
 
 milb_pbp_2021 <- read_csv("milb_pbp_2021.csv")
 
@@ -129,7 +138,16 @@ df_tot_21 <- df2_21 %>%
             tot_hr = sum(home_runs),
             tot_pa = n())
 
-df_final_21 <- left_join(dfroll_21, df_tot_21, by = "adj_name") %>% filter(tot_pa > 200)
+df_final_21 <- left_join(dfroll_21, df_tot_21, by = "adj_name") %>%
+  mutate(ry_walk = tot_walk - roll_walk,
+         ry_k = tot_k - roll_k,
+         ry_sing = tot_sing - roll_sing,
+         ry_dbl = tot_dbl - roll_dbl,
+         ry_tri = tot_tri - roll_tri,
+         ry_hr = tot_hr - roll_hr,
+         ry_pa = tot_pa - roll_pa) %>%
+  #filter(tot_pa > 200) %>%
+  filter(ry_pa != 0)
 
 la_bb <- c(rep(mean(df_tot$tot_walk) / mean(df_tot$tot_pa), length(df_final$game_date)),
           rep(mean(df_tot_21$tot_walk) / mean(df_tot_21$tot_pa), length(df_final_21$game_date)))
@@ -162,12 +180,12 @@ fn <- function(pad, roll_stat, roll_pa, stat_per, la){
 
 }
 
-k_pad <- optimize(fn, c(0,100), roll_stat = dff_final$roll_k, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_k / dff_final$tot_pa, la = la_k)$minimum
-bb_pad <- optimize(fn, c(0,100), roll_stat = dff_final$roll_walk, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_walk / dff_final$tot_pa, la = la_bb)$minimum
-sing_pad <- optimize(fn, c(0,100), roll_stat = dff_final$roll_sing, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_sing / dff_final$tot_pa, la = la_1b)$minimum
-dbl_pad <- optimize(fn, c(0,100), roll_stat = dff_final$roll_dbl, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_dbl / dff_final$tot_pa, la = la_2b)$minimum
-tri_pad <- optimize(fn, c(0,100), roll_stat = dff_final$roll_tri, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_tri / dff_final$tot_pa, la = la_3b)$minimum
-hr_pad <- optimize(fn, c(0,100), roll_stat = dff_final$roll_hr, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_hr / dff_final$tot_pa, la = la_hr)$minimum
+k_pad <- optimize(fn, c(0,1000), roll_stat = dff_final$roll_k, roll_pa = dff_final$roll_pa, stat_per = dff_final$ry_k / dff_final$ry_pa, la = la_k)$minimum
+bb_pad <- optimize(fn, c(0,1000), roll_stat = dff_final$roll_walk, roll_pa = dff_final$roll_pa, stat_per = dff_final$ry_walk / dff_final$ry_pa, la = la_bb)$minimum
+sing_pad <- optimize(fn, c(0,1000), roll_stat = dff_final$roll_sing, roll_pa = dff_final$roll_pa, stat_per = dff_final$ry_sing / dff_final$ry_pa, la = la_1b)$minimum
+dbl_pad <- optimize(fn, c(0,1000), roll_stat = dff_final$roll_dbl, roll_pa = dff_final$roll_pa, stat_per = dff_final$ry_dbl / dff_final$ry_pa, la = la_2b)$minimum
+tri_pad <- optimize(fn, c(0,5000), roll_stat = dff_final$roll_tri, roll_pa = dff_final$roll_pa, stat_per = dff_final$ry_tri / dff_final$ry_pa, la = la_3b)$minimum
+hr_pad <- optimize(fn, c(0,1000), roll_stat = dff_final$roll_hr, roll_pa = dff_final$roll_pa, stat_per = dff_final$ry_hr / dff_final$ry_pa, la = la_hr)$minimum
 
 smry <- data.frame(Level = c("Single A", "High A", "Double A", "Triple A"),
                    K_Pad = c(19.6, 21.9, 19.9, 5.9),

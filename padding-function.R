@@ -70,7 +70,16 @@ fn <- function(df22, df21, lvl) {
               tot_hr = sum(home_runs),
               tot_pa = n())
   
-  df_final <- left_join(dfroll, df_tot, by = "adj_name") %>% filter(tot_pa > 200)
+  df_final <- left_join(dfroll, df_tot, by = "adj_name") %>% 
+    mutate(ry_walk = tot_walk - roll_walk,
+           ry_k = tot_k - roll_k,
+           ry_sing = tot_sing - roll_sing,
+           ry_dbl = tot_dbl - roll_dbl,
+           ry_tri = tot_tri - roll_tri,
+           ry_hr = tot_hr - roll_hr,
+           ry_pa = tot_pa - roll_pa) %>%
+    filter(tot_pa > 300) %>%
+    filter(ry_pa != 0)
   
   milb_pbp_2021 <- df21
   
@@ -137,7 +146,16 @@ fn <- function(df22, df21, lvl) {
               tot_hr = sum(home_runs),
               tot_pa = n())
   
-  df_final_21 <- left_join(dfroll_21, df_tot_21, by = "adj_name") %>% filter(tot_pa > 200)
+  df_final_21 <- left_join(dfroll_21, df_tot_21, by = "adj_name") %>%
+    mutate(ry_walk = tot_walk - roll_walk,
+           ry_k = tot_k - roll_k,
+           ry_sing = tot_sing - roll_sing,
+           ry_dbl = tot_dbl - roll_dbl,
+           ry_tri = tot_tri - roll_tri,
+           ry_hr = tot_hr - roll_hr,
+           ry_pa = tot_pa - roll_pa) %>%
+    filter(tot_pa > 300) %>%
+    filter(ry_pa != 0)
   
   la_bb <- c(rep(mean(df_tot$tot_walk) / mean(df_tot$tot_pa), length(df_final$game_date)),
              rep(mean(df_tot_21$tot_walk) / mean(df_tot_21$tot_pa), length(df_final_21$game_date)))
@@ -170,23 +188,20 @@ fn <- function(df22, df21, lvl) {
     
   }
   
-  k_pad <- optimize(fn, c(0,500), roll_stat = dff_final$roll_k, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_k / dff_final$tot_pa, la = la_k)$minimum
-  bb_pad <- optimize(fn, c(0,500), roll_stat = dff_final$roll_walk, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_walk / dff_final$tot_pa, la = la_bb)$minimum
-  sing_pad <- optimize(fn, c(0,500), roll_stat = dff_final$roll_sing, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_sing / dff_final$tot_pa, la = la_1b)$minimum
-  dbl_pad <- optimize(fn, c(0,500), roll_stat = dff_final$roll_dbl, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_dbl / dff_final$tot_pa, la = la_2b)$minimum
-  tri_pad <- optimize(fn, c(0,500), roll_stat = dff_final$roll_tri, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_tri / dff_final$tot_pa, la = la_3b)$minimum
-  hr_pad <- optimize(fn, c(0,500), roll_stat = dff_final$roll_hr, roll_pa = dff_final$roll_pa, stat_per = dff_final$tot_hr / dff_final$tot_pa, la = la_hr)$minimum
-  
-  
+  k_pad <- optimize(fn, c(0,5000), roll_stat = dff_final$roll_k, roll_pa = dff_final$roll_pa, stat_per = dff_final$ry_k / dff_final$ry_pa, la = la_k)$minimum
+  bb_pad <- optimize(fn, c(0,5000), roll_stat = dff_final$roll_walk, roll_pa = dff_final$roll_pa, stat_per = dff_final$ry_walk / dff_final$ry_pa, la = la_bb)$minimum
+  sing_pad <- optimize(fn, c(0,5000), roll_stat = dff_final$roll_sing, roll_pa = dff_final$roll_pa, stat_per = dff_final$ry_sing / dff_final$ry_pa, la = la_1b)$minimum
+  hr_pad <- optimize(fn, c(0,5000), roll_stat = dff_final$roll_hr, roll_pa = dff_final$roll_pa, stat_per = dff_final$ry_hr / dff_final$ry_pa, la = la_hr)$minimum
+
+
   pad_df <- data.frame(Level = lvl,
                        K_Pad = k_pad,
                        BB_Pad = bb_pad,
                        Single_Pad = sing_pad,
-                       Double_Pad = dbl_pad,
-                       Triple_Pad = tri_pad,
                        Home_Run_Pad = hr_pad)
-  
+
   return(pad_df)
+  
 
 }
 
@@ -195,4 +210,20 @@ df2 <- fn(milb_pbp_2022, milb_pbp_2021, "High-A")
 df3 <- fn(milb_pbp_2022, milb_pbp_2021, "Double-A")
 df4 <- fn(milb_pbp_2022, milb_pbp_2021, "Triple-A")
 
-pad_df <- rbind(df1,df2,df3,df4)
+
+library(janitor)
+pad_df <- rbind(df1,df2,df3,df4) %>%
+  adorn_totals(name = "Average") %>%
+  mutate(across(where(is.numeric), 
+                ~ replace(., n(), .[n()]/(n()-1)))) 
+
+library(gt)
+
+pad_df %>% 
+  gt() %>%
+  tab_style(style = cell_text(weight = "bold"),
+            locations = cells_body(rows = Level == "Average")) %>%
+  tab_header(title = md("**Padding Values By Stat Type and Level**"),
+             subtitle = md("Padding Value Units are Plate Appearances")) %>%
+  fmt_number(columns = -"Level", decimals = 0)
+
