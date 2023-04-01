@@ -34,21 +34,36 @@ statcast_wbday2 <- statcast_wbday %>%
 
 mod_df <- statcast_wbday2 %>% filter(swing == 1 & pitch_type == "FF")
 
+mod_df$batter <- as.factor(mod_df$batter)
+
 library(mgcv)
 
-m0 <- bam(whiff ~ s(adjplate_x,plate_z, k = 100) + s(adjx,pfx_z, k = 100) + s(release_speed,age_day_of_game, k = 100) + release_spin_rate + same_hand, 
+m0 <- bam(whiff ~ s(adjplate_x,plate_z, k = 100) + s(adjx,pfx_z, k = 100) + s(release_speed,age_day_of_game, k = 100) + s(batter, bs = "re") + release_spin_rate + same_hand, 
           data = mod_df,
           family = binomial(),
           discrete = TRUE,
-          nthreads = 4)     
+          nthreads = 4)   
 
-pred_df <- data.frame(adjplate_x = rep(-.34,10),
-                      plate_z = rep(2.98,10),
-                      adjx = rep(-1.06,10),
-                      pfx_z = rep(1.49,10),
-                      release_speed = rep(93,10),
-                      age_day_of_game = 25:34,
-                      release_spin_rate = rep(2500,10),
-                      same_hand = rep(1,10))
+head(mod_df$batter)
+
+age <- 25:35
+
+pred_df <- data.frame(adjplate_x = rep(-.34,length(age)),
+                      plate_z = rep(2.98,length(age)),
+                      adjx = rep(-1.06,length(age)),
+                      pfx_z = rep(1.49,length(age)),
+                      release_speed = rep(93,length(age)),
+                      age_day_of_game = age,
+                      batter = rep(606466 , length(age)),
+                      release_spin_rate = rep(2500,length(age)),
+                      same_hand = rep(1,length(age)))
+
+pred_df$batter <- as.factor(pred_df$batter)
 
 pred_df$p <- predict(m0, pred_df, type = "response")
+
+
+plot(pred_df$age_day_of_game, pred_df$p, type = "l")
+
+
+summary(m0)
