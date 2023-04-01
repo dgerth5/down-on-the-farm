@@ -1,6 +1,7 @@
 library(readr)
 library(tidyverse)
 
+# load data
 milb_pbp_2022 <- read_csv("milb_pbp_2022.csv")
 milb_pbp_2021 <- read_csv("milb_pbp_2021.csv")
 
