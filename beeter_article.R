@@ -22,7 +22,7 @@ beeter %>%
   gt() %>%
   tab_header(title = md("**Clayton Beeter Statcast Data**"),
              subtitle = md("Spring Training 2023")) %>%
-  fmt_number(columns = c("mean_velo", "mean_pfx_x", "mean_pfx_z", "mean_spin_rate"), decimals = 0) %>%
+  fmt_number(columns = c("mean_velo", "mean_pfx_x", "mean_pfx_z", "mean_spin_rate"), decimals = 0, sep_mark = "") %>%
   cols_label(pitch_type = "Pitch Type",
              mean_velo = "Average Velocity",
              mean_pfx_x = "Average Horizontal Break",
