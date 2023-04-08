@@ -44,6 +44,3 @@ df2 <- smry2 %>%
   mutate(factor_percentage = count / total_count) %>% # calculate percentage for each factor
   select(Aff, p, factor_percentage) %>% # select relevant columns
   spread(key = p, value = factor_percentage, fill = 0) # spread data by factor 
-
-df2$scale1 <- abs(as.vector(scale(df2$`1`)))
-
