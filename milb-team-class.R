@@ -49,6 +49,10 @@ df2 <- smry2 %>%
   select(Aff, p, factor_percentage) %>% # select relevant columns
   spread(key = p, value = factor_percentage, fill = 0) # spread data by factor 
 
+mean(df2$`1`)
+mean(df2$`2`)
+mean(df2$`3`)
+
 
 xgrid <- expand.grid(df2$Aff, df2$Aff)
 
@@ -62,9 +66,8 @@ xgrid4 <- xgrid3 %>%
   filter(Var1 != Var2)
 
 # google share
-just_sim_scores <- xgrid4 %>% select(Var1, Var2, sim_score)
-write_csv(just_sim_scores, "dotf_sim_scores.csv")
-
+#just_sim_scores <- xgrid4 %>% select(Var1, Var2, sim_score)
+#write_csv(just_sim_scores, "dotf_sim_scores.csv")
 
 cosine_sim <- function(x,y){
   
@@ -154,13 +157,11 @@ gt(combin_df) %>%
              `3` = "C %") %>%
   fmt_number(columns = c(`3`,`1`,`2`), decimals = 2)
 
-
-
-lad <- df2 %>%
+stl <- df2 %>%
   filter(Aff == "STL") %>%
   ungroup()
 
-gt(lad) %>%
+gt(stl) %>%
   tab_header(title = md("**St. Louis Cardinals Hitting Style**")) %>%
   fmt_number(columns = c(`1`,`2`,`3`), decimals = 2) %>%
   cols_label(Aff = "Org",
