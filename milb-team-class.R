@@ -52,7 +52,7 @@ df2 <- smry2 %>%
   spread(key = p, value = factor_percentage, fill = 0) %>% # spread data by factor 
   rename("A" = `1`, "B" = `2`, "C" = `3`)
 
-write_csv(df2, "hitting_style_by_org.csv")
+#write_csv(df2, "hitting_style_by_org.csv")
 
 xgrid <- expand.grid(df2$Aff, df2$Aff)
 
