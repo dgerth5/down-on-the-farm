@@ -1,10 +1,12 @@
 library(readxl)
 library(tidyverse)
 dotf_team_class2 <- read_excel("~/dotf-team-class2.xlsx")
+dotf_team_class2$IBB[160] <- 3
+dotf_team_class2$IBB[256] <- 8
 
 df <- dotf_team_class2 %>%
   mutate(pow_rat = HR / H,
-         pat_rat = SO / BB,
+         pat_rat = BB / SO,
          sba_rat = (SB + CS) / (H - `2B` - `3B` - HR + BB + IBB + HBP))
 
 y2022 <- df %>% filter(Yr == 2022)
@@ -23,17 +25,17 @@ summary(mod)
 
 just_rats_p <- predict(mod, just_rats)
 
-just_rats$p <- as.factor(just_rats_p[["classification"]])
+dotf_team_class2$p <- as.factor(just_rats_p[["classification"]])
 
-smry <- just_rats %>%
+smry <- dotf_team_class2 %>%
   group_by(p) %>%
-  summarise(mean_pow = mean(pow_rat),
-            mean_pat = mean(pat_rat),
-            mean_sba = mean(sba_rat),
+  summarise(mean_ba = mean(BA),
+            mean_obp = mean(OBP),
+            mean_slg = mean(SLG),
             teams = n()) %>%
   mutate(group = c("A","B","C")) %>%
   ungroup() %>%
-  select(group, mean_pow, mean_pat, mean_sba, teams)
+  select(group, mean_ba, mean_obp, mean_slg, teams)
 
 just_rats2 <- df %>% select(Aff, pow_rat, pat_rat, sba_rat) %>% drop_na()
 just_rats2$p <- as.factor(just_rats_p[["classification"]])
@@ -47,12 +49,10 @@ df2 <- smry2 %>%
   mutate(total_count = sum(count)) %>% # calculate total count for each team
   mutate(factor_percentage = count / total_count) %>% # calculate percentage for each factor
   select(Aff, p, factor_percentage) %>% # select relevant columns
-  spread(key = p, value = factor_percentage, fill = 0) # spread data by factor 
+  spread(key = p, value = factor_percentage, fill = 0) %>% # spread data by factor 
+  rename("A" = `1`, "B" = `2`, "C" = `3`)
 
-mean(df2$`1`)
-mean(df2$`2`)
-mean(df2$`3`)
-
+write_csv(df2, "hitting_style_by_org.csv")
 
 xgrid <- expand.grid(df2$Aff, df2$Aff)
 
@@ -164,7 +164,4 @@ stl <- df2 %>%
 gt(stl) %>%
   tab_header(title = md("**St. Louis Cardinals Hitting Style**")) %>%
   fmt_number(columns = c(`1`,`2`,`3`), decimals = 2) %>%
-  cols_label(Aff = "Org",
-             `1` = "A",
-             `2` = "B",
-             `3` = "C")
+  cols_label(Aff = "Org")
