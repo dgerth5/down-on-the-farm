@@ -52,3 +52,14 @@ ggplot(df, aes(x = pfx_x, y = pfx_z, color = pitch_type)) +
   facet_wrap(~facet, ncol = 2, scales = "fixed") +
   labs(facet_bradford = "Cody Bradford",
        facet_harrison = "Kyle Harrison")
+
+# location
+# ggplot(df, aes(x = pfx_x, y = pfx_z, color = pitch_type)) +
+#   geom_point() +
+#   ggtitle("Matchup of the Day: Cody Bradford vs. Kyle Harrison") +
+#   geom_rect(xmin = -0.75, xmax = 0.75, ymin = 1.75, ymax = 3.75, fill = "transparent", color = "black") +
+#   xlim(-3,3) + ylim(0,5) +
+#   xlab("X Location") + ylab("Vertical Mvmt") +
+#   facet_wrap(~facet, ncol = 2, scales = "fixed") +
+#   labs(facet_bradford = "Cody Bradford",
+#        facet_harrison = "Kyle Harrison")
