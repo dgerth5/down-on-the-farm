@@ -27,7 +27,7 @@ ml_pbp <- 1:length(ml_game_pks) %>%
 ml_pbp <- ml_pbp %>% as.data.frame()
 
 #readr::write_csv(ml_pbp, "mlb2022-40ft.csv")
-readr::read_csv("mlb2022-40ft.csv")
+ml_pbp <- readr::read_csv("mlb2022-40ft.csv")
 
 just_pitches <- ml_pbp %>% filter(isPitch == TRUE)
 
