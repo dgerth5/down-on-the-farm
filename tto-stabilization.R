@@ -11,11 +11,11 @@ leagues2 = leagues %>%
   select(league_id, sport_id, league_name, season_date_info_regular_season_start_date, season_date_info_regular_season_end_date)
 
 dates <- data.frame(day = rep(seq(as.Date("2023-03-31"),Sys.Date(), by = "days"), times = 1))
-minor_league_game_phr_lst <- 1:nrow(dates) %>%
-  purrr::map_df(function(x) mlb_game_phrs(dates$day[x],
+minor_league_game_pks_lst <- 1:nrow(dates) %>%
+  purrr::map_df(function(x) mlb_game_pks(dates$day[x],
                                          level_ids = c(11,12,13,14)))
 
-ml_game_phrs <- minor_league_game_phr_lst %>%
+ml_game_phrs <- minor_league_game_pks_lst %>%
   bind_rows() %>%
   dplyr::filter(status.codedGameState == "F",
                 !is.na(game_phr)) %>%
@@ -25,8 +25,8 @@ plan("multisession", worhrers = 4)
 
 safe_pbp <- safely(mlb_pbp)
 
-ml_pbp <- 1:length(ml_game_phrs) %>%
-  furrr::future_map(function(x) safe_pbp(ml_game_phrs[x]), .progress = T) %>%
+ml_pbp <- 1:length(ml_game_pks) %>%
+  furrr::future_map(function(x) safe_pbp(ml_game_pks[x]), .progress = T) %>%
   purrr::map("result") %>%
   bind_rows()
 
