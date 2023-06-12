@@ -34,6 +34,12 @@ ev_smry <- ev %>%
   group_by(matchup.batter.fullName, batting_team) %>%
   summarise(ev = quantile(hitData.launchSpeed,0.95))
 
+ev_smry_cubs <- ev_smry %>%
+  filter(batting_team == "Iowa Cubs") %>%
+  arrange(-ev) %>%
+  select(-batting_team) %>%
+  ungroup() 
+
 evv <- ev_smry %>%
   select(ev)  %>%
   mutate(perc = ntile(ev, 100)) %>%
@@ -103,4 +109,10 @@ gt(fbs) %>%
              mean_vaa = "VAA") %>%
   fmt_number(c(mean_velo,mean_spin_rate), decimals = 0, sep_mark = "") %>%
   fmt_number(c(mean_xmov,mean_zmov,mean_vaa), decimals = 1)
+
+gt(ev_smry_cubs[1:10,]) %>%
+  tab_header(title = md("**Iowa Cubs 95th Percentile Exit Velocity**"),
+             subtitle = md("Season: 2023. Through 6-7-2023")) %>%
+  cols_label(matchup.batter.fullName = "Name",
+             ev = "EV 95th")
   
