@@ -65,3 +65,42 @@ whiff <- ml_pbp %>%
          perc_whiff = percent_rank(mean_whiff) * 100)
 
   
+
+library(ggplot2)
+
+hector_la <- la  %>%
+  filter(matchup.batter.fullName == "Hector Rodriguez") %>%
+  select(hitData.launchAngle)
+
+hector_ev <- ev %>%
+  filter(matchup.batter.fullName == "Hector Rodriguez") %>%
+  select(hitData.launchSpeed)
+
+  
+ggplot(hector_la, aes(x = hitData.launchAngle, fill = ..count..)) +
+  geom_histogram(bins = 15, color = "black") +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(x = "Launch Angle", y = "Frequency", 
+       title = "Hector Rodriguez Launch Angle Distribution")
+
+ggplot(hector_ev, aes(x = hitData.launchSpeed, fill = ..count..)) +
+  geom_histogram(bins = 15, color = "black") +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(x = "Exit Velocity", y = "Frequency", 
+       title = "Hector Rodriguez Exit Velocity Distribution")
+
+library(gridExtra)
+
+p1 <- ggplot(hector_la, aes(x = hitData.launchAngle, fill = ..count..)) +
+  geom_histogram(bins = 15, color = "black") +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(x = "Launch Angle", y = "Frequency", 
+       title = "Hector Rodriguez Launch Angle Distribution")
+
+p2 <- ggplot(hector_ev, aes(x = hitData.launchSpeed, fill = ..count..)) +
+  geom_histogram(bins = 15, color = "black") +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(x = "Exit Velocity", y = "Frequency", 
+       title = "Hector Rodriguez Exit Velocity Distribution")
+
+grid.arrange(p1, p2, ncol = 2)
