@@ -165,3 +165,5 @@ gt(stl) %>%
   tab_header(title = md("**St. Louis Cardinals Hitting Style**")) %>%
   fmt_number(columns = c(`1`,`2`,`3`), decimals = 2) %>%
   cols_label(Aff = "Org")
+
+# 
