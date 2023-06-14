@@ -115,7 +115,8 @@ cleaner_ss <- xgrid4 %>%
 gt(head(cleaner_ss,5)) %>%
   tab_header(title = md("**Orgs Furthest From the Dodgers**")) %>%
   fmt_number(columns = "Similarity Score", decimals = 2)
-
+#
+#
 
   
   
