@@ -117,8 +117,8 @@ milb_park_effects = cbind(single_re[,c(3,9)], double_re[,c(3,9)], triple_re[,c(3
          double_mult = (double_pf / 100 - 1) / 2 + 1,
          triple_mult = (triple_pf / 100 - 1) / 2 + 1,
          home_run_mult = (home_run_pf / 100 - 1) / 2 + 1,
-         year = 2022) %>%
+         year = 2023) %>%
   select(group, year, single_pf, single_mult, double_pf, double_mult, triple_pf, triple_mult, home_run_pf, home_run_mult) %>%
   rename(team = group)
 
-write_csv(milb_park_effects, "milb_park_effects22.csv")
+write_csv(milb_park_effects, "milb_park_effects23.csv")
