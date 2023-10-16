@@ -5,8 +5,11 @@ library(readr)
 library(lme4)
 library(mixedup)
 
-leagues <- mlb_league(2022) %>% select(league_name, sport_id)
-dates <- data.frame(day = rep(seq(as.Date("2022-04-08"),as.Date("2022-10-18"), by = "days"), times = 1))
+leagues <- mlb_league(2023) 
+l2 <- leagues %>% 
+  select(league_name, sport_id, season_date_info_regular_season_start_date, season_date_info_regular_season_end_date)
+dates <- data.frame(day = rep(seq(as.Date("2023-03-31"),as.Date("2023-09-24"), by = "days"), times = 1))
+
 minor_league_game_pk_lst <- 1:nrow(dates) %>%
   purrr::map(function(x) mlb_game_pks(dates$day[x],
                                       level_ids = c(11,12,13,14)))
@@ -17,7 +20,7 @@ ml_game_pks <- minor_league_game_pk_lst %>%
                 !is.na(game_pk)) %>%
   pull(game_pk)
 
-plan("multisession", workers = 3)
+plan("multisession", workers = 4)
 
 safe_pbp <- safely(mlb_pbp)
 
@@ -28,30 +31,31 @@ ml_pbp <- 1:length(ml_game_pks) %>%
 
 ml_pbp <- ml_pbp %>% as.data.frame()
 
-write_csv(ml_pbp, file = "milb_pbp_2022.csv")
+# 2023
+
+write_csv(ml_pbp, file = "milb_pbp_2023.csv")
 
 unique(ml_pbp$home_level_name)
 
 triple_a <- ml_pbp %>%
   filter(home_level_name == "Triple-A")
 
-write_csv(triple_a, file = "triple_a_pbp2022.csv")
+write_csv(triple_a, file = "triple_a_pbp2023.csv")
 
 double_a <- ml_pbp %>%
   filter(home_level_name == "Double-A")
 
-write_csv(double_a, file = "double_a_pbp2022.csv")
+write_csv(double_a, file = "double_a_pbp2023.csv")
 
 high_a <- ml_pbp %>%
   filter(home_level_name == "High-A")
 
-write_csv(double_a, file = "high_a_pbp2022.csv")
+write_csv(high_a, file = "high_a_pbp2023.csv")
 
 single_a <- ml_pbp %>%
   filter(home_level_name == "Single-A")
 
-write_csv(double_a, file = "single_a_pbp2022.csv")
-
+write_csv(single_a, file = "single_a_pbp2023.csv")
 
 events <- list(single=c("single"), double=c("double"), triple=c("triple"), home_run = c("home_run"),
                out=c("force_out","field_out","grounded_into_double_play","grounded_into_triple_play","sac_fly",
@@ -63,7 +67,7 @@ calculate_re <- function(df, event_name){
   
   event_df <- df %>%
     filter(details.description %in% in_play_desc) %>%
-    filter(result.eventType %in% c(events[[event_name]],events[["out"]])) %>%
+   # filter(result.eventType %in% c(events[[event_name]],events[["out"]])) %>% think about if i actually want this, but i dont think so
     mutate(event = if_else(result.eventType == events[[event_name]], 1, 0),
            batter_name = paste0(matchup.batter.fullName, matchup.batter.id),
            pitcher_name = paste0(matchup.pitcher.fullName, matchup.pitcher.id)) %>%
