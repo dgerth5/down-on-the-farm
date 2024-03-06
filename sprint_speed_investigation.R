@@ -9,6 +9,8 @@ library(mlbplotR)
 library(gt)
 library(gtExtras)
 
+
+
 # get sprint speed
 
 df <- map_df(2015:2023, ~ statcast_leaderboards(leaderboard = "sprint_speed", year = .x))
@@ -243,7 +245,7 @@ just_milb <- left_join(final_df, x, by = "player_id") %>%
 
 sapply(just_milb, class)
 
-just_milb %>%
+table1 <- just_milb %>%
   ungroup() %>%
   slice(1:10) %>%
   mutate(team = c("STL", "TB", "WSH", "TOR", "KC", "NYM", "TB", "BAL", "BOS", "HOU"),
@@ -256,12 +258,12 @@ just_milb %>%
   fmt_number("pred_sprint_speed", decimals = 1) %>%
   gt_img_rows(player_image, height = 25) %>%
   gt_img_rows(team_logo_espn, height = 25) %>%
-  cols_label(pred_sprint_speed = "Sprint Speed (MPH)",
+  cols_label(pred_sprint_speed = "Sprint Speed (ft/sec)",
              player_image = "",
              team_logo_espn = "",
              player_name = "Name")
 
-gtsave(table1, "fastest_milb.png")
+gtsave(table1, "fastest_milb2.png")
 
 # compare to mlb data 
 
@@ -272,11 +274,28 @@ comb_df$diff <- round(comb_df$sprint_speed - comb_df$pred_sprint_speed,4)
 
 MLmetrics::RMSE(comb_df$pred_sprint_speed, comb_df$sprint_speed)
 
-plot_data2 <- data.frame(SprintSpeed = comb_df$sprint_speed, FittedValues = comb_df$pred_sprint_speed)
+plot_data2 <- data.frame(SprintSpeed = comb_df$sprint_speed, FittedValues = comb_df$pred_sprint_speed,
+                         Name = comb_df$player_name)
+
+selected_names <- c("Elly De La Cruz", "Isan Diaz", "Vidal Bruján", "Isan Díaz")  
+selected_names2 <- c("Brenton Doyle") 
 
 ggplot(plot_data2, aes(x = SprintSpeed, y = FittedValues)) +
   geom_point() +
-  geom_smooth(method = "lm", color = "blue", se = FALSE) +  
-  theme_minimal() +
-  labs(x = "Sprint Speed", y = "Fitted Values", title = "Scatter Plot of Sprint Speed vs Fitted Values w GAM")
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
+  geom_label_repel(data = subset(plot_data2, Name %in% selected_names), 
+                   aes(label = Name), nudge_x = -0.35, nudge_y = 0.4, 
+                   arrow = arrow(type = "closed", length = unit(0.02, "npc")), 
+                   box.padding = 0.5, 
+                   point.padding = 0.5) +
+  geom_label_repel(data = subset(plot_data2, Name %in% selected_names2), 
+                   aes(label = Name), nudge_x = 0.35, nudge_y = -0.35, 
+                   arrow = arrow(type = "closed", length = unit(0.02, "npc")), 
+                   box.padding = 0.5, 
+                   point.padding = 0.5) +
+  ggtitle("Sprint Speed vs Estimated Sprint Speed", 
+          subtitle = "Players Who Played Triple A and MLB in 2023") +
+  xlab("Sprint Speed") + ylab("Estimated Sprint Speed")
+
+ggsave("sprint_speed_pred2.png")
 
