@@ -236,22 +236,6 @@ just_milb <- left_join(final_df, x, by = "player_id") %>%
   filter(is.na(sprint_speed) == TRUE) %>%
   select(player_name, player_id, pred_sprint_speed)
 
-table2 <- just_milb %>%
-  slice(1:10) %>%
-  mutate(team = c("STL", "TB", "WSH", "CLE", "TOR", "KC", "CLE", "SD", "NYM", "TB"),
-         player_image = paste0("https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_360/v1/people/", player_id, "/headshot/milb/current")) %>%
-  left_join(mlbplotR::load_mlb_teams(), by = c("team"="team_abbr")) %>%
-  select(player_name, player_image,team_logo_espn, pred_sprint_speed) %>%
-  gt() %>%
-  tab_header(title = md("**Fastest Minor Leaguers**"),
-             subtitle = md("Season: 2023")) %>%
-  fmt_number("pred_sprint_speed", decimals = 2) %>%
-  gt_img_rows(player_image, height = 25) %>%
-  gt_img_rows(team_logo_espn, height = 25) %>%
-  cols_label(pred_sprint_speed = "Sprint Speed (MPH)",
-             player_image = "",
-             team_logo_espn = "",
-             player_name = "Name")
 
 table1 <- just_milb %>%
   slice(1:10) %>%
