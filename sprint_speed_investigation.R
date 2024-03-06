@@ -209,6 +209,7 @@ milb_stats2 <- left_join(milb_stats, lookup, by = c("player_id"="mlbam_id"))
 milb_stats3 <- milb_stats2 %>%
   arrange(player_id, season) %>%
   select(player_id, player_name, season, norm_sba, norm_tr, norm_sgr, tot_pa, age2023) %>%
+  group_by(player_id) %>%
   mutate(lag_sba = lag(norm_sba),
          lag_tr = lag(norm_tr),
          lag_s2gbo = lag(norm_sgr),
@@ -219,12 +220,16 @@ milb_stats3 <- milb_stats2 %>%
   mutate(wa_sba = norm_sba*weight*curr_pa_weight + lag_sba*(1-weight)*prev_pa_weight,
          wa_triple_rate = norm_tr*weight*curr_pa_weight + lag_tr*(1-weight)*prev_pa_weight,
          wa_s2gbo = norm_sgr*weight*curr_pa_weight + lag_s2gbo*(1-weight)*prev_pa_weight) %>%
-  rename(age = age2023) %>% 
-  filter(season == 2023) 
+  rename(age = age2023) %>%
+  filter(season == 2023) %>%
+  drop_na()
 
-pred_sprint_speed <- predict(mod2, milb_stats3)  
+pred_sprint_speed <- predict.gam(mod2, milb_stats3)  
 
-final_df <- cbind(milb_stats3, pred_sprint_speed) %>%
+final_df <- milb_stats3
+final_df$pred_sprint_speed <- as.vector(pred_sprint_speed)
+
+final_df <- final_df %>%
   select(player_name, player_id, pred_sprint_speed) %>%
   arrange(-pred_sprint_speed)
 
@@ -236,17 +241,19 @@ just_milb <- left_join(final_df, x, by = "player_id") %>%
   filter(is.na(sprint_speed) == TRUE) %>%
   select(player_name, player_id, pred_sprint_speed)
 
+sapply(just_milb, class)
 
-table1 <- just_milb %>%
+just_milb %>%
+  ungroup() %>%
   slice(1:10) %>%
-  mutate(team = c("STL", "TB", "WSH", "CLE", "TOR", "KC", "CLE", "SD", "NYM", "TB"),
+  mutate(team = c("STL", "TB", "WSH", "TOR", "KC", "NYM", "TB", "BAL", "BOS", "HOU"),
          player_image = paste0("https://img.mlbstatic.com/mlb-photos/image/upload/c_fill,g_auto/w_360/v1/people/", player_id, "/headshot/milb/current")) %>%
   left_join(mlbplotR::load_mlb_teams(), by = c("team"="team_abbr")) %>%
-  select(player_name, player_image,team_logo_espn, pred_sprint_speed) %>%
+  select(player_image, player_name,team_logo_espn, pred_sprint_speed) %>%
   gt() %>%
-  tab_header(title = md("**Fastest Minor Leaguers**"),
-             subtitle = md("Season: 2023")) %>%
-  fmt_number("pred_sprint_speed", decimals = 2) %>%
+  tab_header(title = md("**Fastest Estimated Minor Leaguers**"),
+             subtitle = md("2023 Season")) %>%
+  fmt_number("pred_sprint_speed", decimals = 1) %>%
   gt_img_rows(player_image, height = 25) %>%
   gt_img_rows(team_logo_espn, height = 25) %>%
   cols_label(pred_sprint_speed = "Sprint Speed (MPH)",
