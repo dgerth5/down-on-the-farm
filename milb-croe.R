@@ -21,9 +21,6 @@ mlb2022_mvmt <- mlb2022_40ft %>%
 mlb2022_mvmt$count.strikes.start <- as.factor(mlb2022_mvmt$count.strikes.start)
 mlb2022_mvmt$matchup.batSide.code <- as.factor(mlb2022_mvmt$matchup.batSide.code)
 
-mean(mlb2022_mvmt$swing)
-
-
 library(readxl)
 mlb_triplea_elev <- read_excel("~/mlb-triplea-elev.xlsx")
 elev <- data.frame(team = c(mlb_triplea_elev$`MLB Team`, mlb_triplea_elev$`AAA Team`),
@@ -42,26 +39,6 @@ m0 <- bam(swing ~ s(pitchData.coordinates.x, pitchData.coordinates.y) +
           discrete = TRUE)
 
 summary(m0)
-
-combin1$p <- predict(m0, combin1, type = "response")
-combin1$p0 <- rep(0, length(combin1$p))
-combin1$p_dec <- ifelse(combin1$p > .5, 1, 0)
-
-summary(combin1$p)
-MLmetrics::LogLoss(combin1$p, combin1$swing)
-MLmetrics::Accuracy(combin1$p_dec, combin1$swing)
-MLmetrics::Accuracy(combin1$p, combin1$swing)
-
-summary(combin1$swing)
-
-library(pROC)
-
-roc_obj <- roc(combin1$swing, combin1$p)
-
-plot(roc_obj, main="ROC Curve")
-
-# Add AUC in legend
-legend("bottomright", legend=paste("AUC =", round(auc(roc_obj), 2)))
 
 library(baseballr)
 library(tidyverse)
@@ -91,9 +68,6 @@ milb_pbp <- 1:length(ml_game_pks) %>%
 
 milb_pbp <- milb_pbp %>% as.data.frame()
 
-
-unique(milb_pbp$pitchData.zone)
-
 milb2023 <- milb_pbp %>%
   filter(isPitch == TRUE) %>%
   mutate(swing = if_else(details.call.description %in% swing_event, 1, 0),
@@ -106,20 +80,12 @@ milb2023 <- milb_pbp %>%
          pitchData.coordinates.pX, pitchData.coordinates.pZ, matchup.batSide.code, matchup.batter.fullName, batting_team) %>%
   drop_na()
 
-
 milb2023$count.strikes.start <- as.factor(milb2023$count.strikes.start)
-milb2023$matchup.batSide.code <- as.factor(milb2023$matchup.batSide.code)
-combin2 <- left_join(milb2023, elev, by = c("home_team"="team")) %>% drop_na()
+combin2 <- left_join(milb2023, elev, by = c("home_team"="team")) %>%
+  filter(count.strikes.start != "4") %>%
+  drop_na()
 
 combin2$p <- predict(m0, combin2, type = "response")
-
-# get prob of chase swing btw mlb and aaa
-
-cmlb <- combin1 %>% filter(chase_zone == 1) 
-mean(cmlb$p)
-mean(cmlb$swing)
-caaa <- combin2 %>% filter(chase_zone == 1)
-mean(caaa$p)
 
 croe_smry <- combin2 %>%
   group_by(matchup.batter.fullName, batting_team) %>%
@@ -129,10 +95,8 @@ croe_smry <- combin2 %>%
             n = n()) %>%
   mutate(croe = round(mean_p - mean_chase,3))
 
-summary(croe_smry$n)
-summary(croe_smry$croe)
-
-ovr_swing <- combin2 %>%
+o_swing <- milb2023  %>%
+  filter(chase_zone == 1) %>%
   group_by(matchup.batter.fullName) %>%
   summarise(mean_swing = mean(swing)) %>%
   ungroup() %>%
@@ -140,11 +104,9 @@ ovr_swing <- combin2 %>%
 
 croe_w_swing <- left_join(croe_smry, ovr_swing, by = "matchup.batter.fullName")
 
-just_omaha <- croe_w_swing %>% filter(batting_team == "Omaha Storm Chasers")
+library(readr)
 
-g50 <- croe_w_swing %>% filter(swing_per > 50)
-
-write_csv(just_omaha, "just_omaha.csv")
+write_csv(milb_pbp, "triple-a-2023-828.csv")
 
 library(gt)
 

@@ -5,10 +5,10 @@ library(readr)
 library(lme4)
 library(mixedup)
 
-leagues <- mlb_league(2023) 
+leagues <- mlb_league(2021) 
 l2 <- leagues %>% 
   select(league_name, sport_id, season_date_info_regular_season_start_date, season_date_info_regular_season_end_date)
-dates <- data.frame(day = rep(seq(as.Date("2023-03-31"),as.Date("2023-09-24"), by = "days"), times = 1))
+dates <- data.frame(day = rep(seq(as.Date("2021-05-04"),as.Date("2021-10-03"), by = "days"), times = 1))
 
 minor_league_game_pk_lst <- 1:nrow(dates) %>%
   purrr::map(function(x) mlb_game_pks(dates$day[x],
@@ -31,31 +31,31 @@ ml_pbp <- 1:length(ml_game_pks) %>%
 
 ml_pbp <- ml_pbp %>% as.data.frame()
 
-# 2023
+# 2022
 
-write_csv(ml_pbp, file = "milb_pbp_2023.csv")
+write_csv(ml_pbp, file = "milb_pbp_2021.csv")
 
 unique(ml_pbp$home_level_name)
 
 triple_a <- ml_pbp %>%
   filter(home_level_name == "Triple-A")
 
-write_csv(triple_a, file = "triple_a_pbp2023.csv")
+write_csv(triple_a, file = "triple_a_pbp2021.csv")
 
 double_a <- ml_pbp %>%
   filter(home_level_name == "Double-A")
 
-write_csv(double_a, file = "double_a_pbp2023.csv")
+write_csv(double_a, file = "double_a_pbp2021.csv")
 
 high_a <- ml_pbp %>%
   filter(home_level_name == "High-A")
 
-write_csv(high_a, file = "high_a_pbp2023.csv")
+write_csv(high_a, file = "high_a_pbp2021.csv")
 
 single_a <- ml_pbp %>%
   filter(home_level_name == "Single-A")
 
-write_csv(single_a, file = "single_a_pbp2023.csv")
+write_csv(single_a, file = "single_a_pbp2021.csv")
 
 events <- list(single=c("single"), double=c("double"), triple=c("triple"), home_run = c("home_run"),
                out=c("force_out","field_out","grounded_into_double_play","grounded_into_triple_play","sac_fly",
@@ -117,8 +117,8 @@ milb_park_effects = cbind(single_re[,c(3,9)], double_re[,c(3,9)], triple_re[,c(3
          double_mult = (double_pf / 100 - 1) / 2 + 1,
          triple_mult = (triple_pf / 100 - 1) / 2 + 1,
          home_run_mult = (home_run_pf / 100 - 1) / 2 + 1,
-         year = 2023) %>%
+         year = 2021) %>%
   select(group, year, single_pf, single_mult, double_pf, double_mult, triple_pf, triple_mult, home_run_pf, home_run_mult) %>%
   rename(team = group)
 
-write_csv(milb_park_effects, "milb_park_effects23.csv")
+write_csv(milb_park_effects, "milb_park_effects21.csv")

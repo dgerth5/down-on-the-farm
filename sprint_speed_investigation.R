@@ -124,7 +124,7 @@ plot_data <- data.frame(SprintSpeed = test3$sprint_speed, FittedValues = fitted_
 ggplot(plot_data, aes(x = SprintSpeed, y = FittedValues)) +
   geom_point() +
   geom_smooth(method = "lm", color = "blue", se = FALSE) +  
-  theme_minimal() +
+ # theme_minimal() +
   labs(x = "Sprint Speed", y = "Predicted Sprint Speed", 
        title = "Sprint Speed vs Predicted Sprint Speed - Out of Sample")
 

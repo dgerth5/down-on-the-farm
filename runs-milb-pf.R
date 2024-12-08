@@ -3,7 +3,7 @@ library(tidyverse)
 library(mixedup)
 library(lme4)
 
-leagues = mlb_league(2022) %>% select(league_name, sport_id, season_date_info_season_start_date, season_date_info_season_end_date)
+leagues = mlb_league(2023) %>% select(league_name, sport_id, season_date_info_season_start_date, season_date_info_season_end_date)
 
 get_games = function(league_id, start, end){
   
@@ -22,10 +22,10 @@ get_games = function(league_id, start, end){
   return(gmes)
 }
 
-triple_a_gms = get_games(11, "2022-04-05", "2022-10-02")
-double_a_gms = get_games(12, "2022-04-08", "2022-09-28")
-high_a_gms = get_games(13, "2022-04-08", "2022-09-21")
-single_a_gms = get_games(14, "2022-04-08", "2022-09-20")
+triple_a_gms = get_games(11, "2023-03-31", "2023-09-30")
+double_a_gms = get_games(12, "2023-04-06", "2023-09-27")
+high_a_gms = get_games(13, "2023-04-06", "2023-09-20")
+single_a_gms = get_games(14, "2023-04-06", "2023-09-20")
 
 all_gms = rbind(triple_a_gms, double_a_gms, high_a_gms, single_a_gms)
 
@@ -52,4 +52,40 @@ runs_park_effect = extract_random_coefficients(run_mod) %>%
   select(group, park_factor, park_factor_mult) %>%
   rename(team = group)
 
-write_csv(runs_park_effect, "runs_park_effect22.csv")
+write_csv(runs_park_effect, "runs_park_effect23.csv")
+
+
+df9 <- read_csv("runs_park_effect23.csv")
+
+
+# run
+top_r <- df9 %>%
+  mutate(league_lvl = paste0(tools::toTitleCase(league), " (", toupper(level), ")")) %>%
+  select(team, league_lvl, park_factor) %>%
+  arrange(-park_factor) %>%
+  head(5)
+
+bot_r <- df9 %>%
+  mutate(league_lvl = paste0(tools::toTitleCase(league), " (", toupper(level), ")")) %>%
+  select(team, league_lvl, park_factor) %>%
+  arrange(park_factor) %>%
+  head(5) 
+
+colnames(bot_r) <- paste0(colnames(bot_r),"2")
+
+cb <- cbind(top_r, bot_r)
+
+r_pk <- cb %>%
+  gt() %>%
+  tab_header(title = md("**Top and Bottom 5 Run Parks**"),
+             subtitle =  md("Season: 2023")) %>%
+  gt_add_divider("park_factor") %>%
+  fmt_number(c("park_factor", "park_factor2"), decimals = 0) %>%
+  cols_label(team = "Team",
+             league_lvl = "League (Level)",
+             park_factor = "PF",
+             team2 = "Team",
+             league_lvl2 = "League (Level)",
+             park_factor2 = "PF")
+
+gtsave(r_pk, "r_pk23.png")

@@ -3,7 +3,6 @@ library(tidyverse)
 
 milb_pbp_2022 <- read_csv("milb_pbp_2022.csv")
 
-
 smry <- milb_pbp_2022 %>%
   group_by(game_pk) %>%
   arrange(atBatIndex, .by_group = TRUE) %>%

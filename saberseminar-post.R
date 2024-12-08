@@ -23,4 +23,20 @@ gt(df2) %>%
   cols_label(WARDol = "WAR$",
              WARDolPV = "PV(WAR$)") 
 
-  
+df3 <- data.frame(Year = c(1:9,"Total"),
+                  WARA = c(rep(0,3),rep(1,6),6),
+                  WARDolA = c(rep(0,3),rep(9,6),54),
+                  WARPVA = c(0,0,0,6.15,5.59,5.08,4.62,4.20,3.82,29.45),
+                  WARB = c(0,rep(1,6),rep(0,2),6),
+                  WARDolB = c(0,rep(9,6), rep(0,2),54),
+                  WARPVB = c(0,7.44,6.76,6.15,5.59,5.08,4.62,0,0,35.63))
+
+gt(df3) %>%
+  tab_header(title = md("**Prospect A vs. Prospect B**")) %>%
+  fmt_currency(-c("Year","WARA","WARB")) %>%
+  cols_label(WARA = "A-WAR",
+             WARDolA = "A-WAR$",
+             WARPVA = "PV(A-WAR$)",
+             WARB = "B-WAR",
+             WARDolB = "B-WAR$",
+             WARPVB = "PV(B-WAR$)")
