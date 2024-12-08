@@ -1,0 +1,26 @@
+---
+title: "Untitled"
+author: "David Gerth"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+$$
+ER \sim \text{Poisson(}\mu) \\
+\mu = \beta_0 + \beta_1\text{k_pi } + \beta_2\text{bb_pi } + \beta_3\text{IP} \\
+
+\text{k} \sim \text{Binom(BF, k_pi)} \\
+\text{bb} \sim \text{Binom(BF, bb_pi)} \\
+
+\text{k_pi} \sim Beta(\alpha_1, \beta_1) \\
+\text{bb_pi} \sim Beta(\alpha_2, \beta_2) \\
+
+\beta_0, \beta_1, \beta_2, \beta_3 \sim N(0,1) \\
+
+$$
